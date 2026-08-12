@@ -50,7 +50,6 @@ export class PalmRejectionFilter {
     this._boundHandleMove = this._handleMove.bind(this);
     this._boundHandleUp = this._handleUp.bind(this);
     this._boundHandleCancel = this._handleCancel.bind(this);
-    this._boundPreventTouch = this._preventTouch.bind(this);
 
     this._attach();
   }
@@ -104,11 +103,6 @@ export class PalmRejectionFilter {
     canvas.addEventListener('pointerup', this._boundHandleUp, { passive: false });
     canvas.addEventListener('pointercancel', this._boundHandleCancel, { passive: false });
 
-    // Prevent all default touch behaviors (scroll, zoom, pan)
-    canvas.addEventListener('touchstart', this._boundPreventTouch, { passive: false });
-    canvas.addEventListener('touchmove', this._boundPreventTouch, { passive: false });
-    canvas.addEventListener('touchend', this._boundPreventTouch, { passive: false });
-
     // CSS touch-action: none removes browser default gesture handling
     canvas.style.touchAction = 'none';
   }
@@ -119,19 +113,11 @@ export class PalmRejectionFilter {
     canvas.removeEventListener('pointermove', this._boundHandleMove);
     canvas.removeEventListener('pointerup', this._boundHandleUp);
     canvas.removeEventListener('pointercancel', this._boundHandleCancel);
-    canvas.removeEventListener('touchstart', this._boundPreventTouch);
-    canvas.removeEventListener('touchmove', this._boundPreventTouch);
-    canvas.removeEventListener('touchend', this._boundPreventTouch);
   }
 
   // ─────────────────────────────────────────────────────────────────────────
   // Event Handlers
   // ─────────────────────────────────────────────────────────────────────────
-
-  /** Prevent ALL default browser touch behaviors on the canvas */
-  _preventTouch(event) {
-    event.preventDefault();
-  }
 
   /**
    * @param {PointerEvent} event

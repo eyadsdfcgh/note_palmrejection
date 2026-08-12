@@ -57,10 +57,9 @@ export function hslToHex(h, s, l) {
  */
 export function getCanvasPoint(event, canvas) {
   const rect = canvas.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
   return {
-    x: (event.clientX - rect.left) * dpr,
-    y: (event.clientY - rect.top) * dpr,
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top,
   };
 }
 
