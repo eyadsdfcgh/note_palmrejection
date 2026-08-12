@@ -212,16 +212,6 @@ export class PalmRejectionFilter {
           return true; // Large contact area → palm
         }
       }
-      // If no size data (some browsers don't provide it), check tangentialPressure
-      // and tiltX/tiltY as secondary heuristics
-      // If tilt is extreme, it might be a palm laying down
-      if (event.tiltX !== undefined && event.tiltY !== undefined) {
-        const absX = Math.abs(event.tiltX);
-        const absY = Math.abs(event.tiltY);
-        if (absX > 60 || absY > 60) {
-          return true; // Very tilted → likely palm
-        }
-      }
     }
 
     return false;

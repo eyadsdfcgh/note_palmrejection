@@ -187,6 +187,7 @@ export class DrawingEngine {
 
     if (this.mode === 'eraser') {
       ctx.globalCompositeOperation = 'destination-out';
+      ctx.globalAlpha = 1.0;
       ctx.strokeStyle = 'rgba(0,0,0,1)';
       ctx.fillStyle = 'rgba(0,0,0,1)';
       ctx.lineWidth = this.strokeWidth * 3; // eraser is wider
