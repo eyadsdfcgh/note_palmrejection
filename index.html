@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="description" content="NotePalm — A modern, feature-rich smart note-taking and digital whiteboard app with advanced palm rejection, built for stylus users." />
+  <meta name="theme-color" content="#0d0f14" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>NotePalm — Smart Digital Canvas</title>
+
+  <!-- Favicon inline SVG via data URI -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%236366f1'/%3E%3Ctext x='16' y='23' font-size='18' text-anchor='middle' fill='white'%3E✏%3C/text%3E%3C/svg%3E" />
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- jsPDF for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- App Styles -->
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       TOOLBAR
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <header id="toolbar" role="toolbar" aria-label="Drawing tools">
+
+    <!-- Brand -->
+    <div class="toolbar-brand" aria-label="NotePalm">
+      <div class="toolbar-brand-icon" aria-hidden="true">✏️</div>
+      <span class="toolbar-brand-name">NotePalm</span>
+    </div>
+
+    <div class="toolbar-divider" role="separator"></div>
+
+    <!-- ── Drawing Mode ─────────────────────────────────────────────────── -->
+    <div class="toolbar-group" role="group" aria-label="Drawing mode">
+      <span class="toolbar-label" aria-hidden="true">Mode</span>
+
+      <!-- Pen -->
+      <button
+        id="btn-pen"
+        class="tb-btn"
+        data-tip="Pen (P)"
+        aria-label="Pen tool"
+        aria-pressed="true"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 20h9"/>
+          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+        </svg>
+      </button>
+
+      <!-- Eraser -->
+      <button
+        id="btn-eraser"
+        class="tb-btn"
+        data-tip="Eraser (E)"
+        aria-label="Eraser tool"
+        aria-pressed="false"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 20H7L3 16l11.5-11.5a2 2 0 0 1 2.83 0l3.17 3.17a2 2 0 0 1 0 2.83L8 20"/>
+          <path d="M6.5 17.5l2.5-2.5"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="toolbar-divider" role="separator"></div>
+
+    <!-- ── Colors ───────────────────────────────────────────────────────── -->
+    <div class="toolbar-group" role="group" aria-label="Color selection">
+      <span class="toolbar-label" aria-hidden="true">Color</span>
+
+      <!-- Color swatches (dynamically populated by toolbar.js) -->
+      <div id="color-swatches" style="display:flex;align-items:center;gap:4px;" role="listbox" aria-label="Preset colors"></div>
+
+      <!-- Custom color picker button -->
+      <div class="color-swatch-wrap" style="margin-left:4px;">
+        <button id="color-picker-btn" data-tip="Custom color" aria-label="Pick custom color" title="Custom color">
+          <div class="color-preview" id="color-preview" style="background:#6366f1;"></div>
+          <input type="color" id="color-picker-input" value="#6366f1" aria-label="Custom color picker" />
+        </button>
+      </div>
+    </div>
+
+    <div class="toolbar-divider" role="separator"></div>
+
+    <!-- ── Stroke Width ──────────────────────────────────────────────────── -->
+    <div class="toolbar-group" role="group" aria-label="Stroke width">
+      <span class="toolbar-label" aria-hidden="true">Size</span>
+      <div class="stroke-slider-wrap">
+        <div class="stroke-preview" aria-hidden="true">
+          <div class="stroke-dot" id="stroke-dot" style="width:4px;height:4px;"></div>
+        </div>
+        <input
+          type="range"
+          id="stroke-slider"
+          min="1"
+          max="30"
+          value="4"
+          step="1"
+          style="--pct: 10%"
+          aria-label="Stroke width"
+          aria-valuemin="1"
+          aria-valuemax="30"
+          aria-valuenow="4"
+        />
+      </div>
+    </div>
+
+    <div class="toolbar-divider" role="separator"></div>
+
+    <!-- ── Undo / Redo ───────────────────────────────────────────────────── -->
+    <div class="toolbar-group" role="group" aria-label="History">
+      <button id="btn-undo" class="tb-btn" data-tip="Undo (Ctrl+Z)" aria-label="Undo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 7v6h6"/>
+          <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
+        </svg>
+      </button>
+      <button id="btn-redo" class="tb-btn" data-tip="Redo (Ctrl+Y)" aria-label="Redo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 7v6h-6"/>
+          <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="toolbar-divider" role="separator"></div>
+
+    <!-- ── Palm Rejection ───────────────────────────────────────────────── -->
+    <div class="toolbar-group palm-toggle-wrap" role="group" aria-label="Palm rejection">
+      <label class="toggle-switch" aria-label="Palm rejection toggle">
+        <input type="checkbox" id="palm-toggle" checked aria-checked="true" />
+        <span class="toggle-slider"></span>
+      </label>
+      <span class="palm-label" id="palm-label" aria-live="polite">Palm Rejection</span>
+      <button
+        id="btn-palm-settings"
+        class="tb-btn"
+        data-tip="Palm rejection settings"
+        aria-label="Palm rejection settings"
+        style="width:28px;height:28px;"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="toolbar-divider" role="separator"></div>
+
+    <!-- ── Calculator ────────────────────────────────────────────────────── -->
+    <button
+      id="btn-calculator"
+      class="tb-btn"
+      data-tip="Calculator (Ctrl+K)"
+      aria-label="Toggle calculator"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="4" y="2" width="16" height="20" rx="2"/>
+        <line x1="8" y1="6" x2="16" y2="6"/>
+        <line x1="8" y1="10" x2="16" y2="10"/>
+        <line x1="8" y1="14" x2="12" y2="14"/>
+        <line x1="8" y1="18" x2="10" y2="18"/>
+        <line x1="14" y1="14" x2="16" y2="18"/>
+      </svg>
+    </button>
+
+    <div class="toolbar-divider" role="separator"></div>
+
+    <!-- ── Clear ─────────────────────────────────────────────────────────── -->
+    <button
+      id="btn-clear"
+      class="tb-btn"
+      data-tip="Clear canvas"
+      aria-label="Clear canvas"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="3 6 5 6 21 6"/>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+      </svg>
+    </button>
+
+    <!-- ── Export ─────────────────────────────────────────────────────────── -->
+    <div class="export-wrap" style="position:relative;">
+      <button
+        id="btn-export"
+        class="tb-btn"
+        data-tip="Export"
+        aria-label="Export canvas"
+        aria-haspopup="true"
+        aria-expanded="false"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+      </button>
+
+      <div id="export-dropdown" class="export-dropdown" role="menu">
+        <div class="export-item" id="export-png" role="menuitem" tabindex="0" aria-label="Export as PNG">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+          Export PNG
+        </div>
+        <div class="export-item" id="export-pdf" role="menuitem" tabindex="0" aria-label="Export as PDF">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          Export PDF
+        </div>
+      </div>
+    </div>
+
+  </header>
+  <!-- END TOOLBAR -->
+
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       CANVAS
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="canvas-container">
+    <!-- Subtle dot grid background -->
+    <div class="canvas-bg-grid" aria-hidden="true"></div>
+    <!-- The actual drawing surface -->
+    <canvas
+      id="drawing-canvas"
+      class="mode-pen"
+      role="img"
+      aria-label="Drawing canvas — use a stylus or mouse to draw"
+    ></canvas>
+  </div>
+  <!-- END CANVAS -->
+
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       FLOATING CALCULATOR
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="calculator" role="dialog" aria-label="Calculator" aria-modal="false">
+    <!-- Built dynamically by calculator.js -->
+  </div>
+  <!-- END CALCULATOR -->
+
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       PALM REJECTION SETTINGS MODAL
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="palm-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="palm-modal-title">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h2 class="modal-title" id="palm-modal-title">
+          <span class="modal-title-icon" aria-hidden="true">🖐</span>
+          Palm Rejection
+        </h2>
+        <button class="modal-close" id="palm-modal-close" aria-label="Close palm rejection settings">✕</button>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-label">How it works</div>
+        <div class="modal-description">
+          Palm rejection filters out accidental hand contacts by measuring the
+          touch contact area. Large contacts (palm, heel of hand) are ignored,
+          while small contacts (stylus tip, fingertip) are allowed to draw.
+          Stylus and mouse inputs are <strong>always</strong> allowed.
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <div class="modal-section-label">Sensitivity</div>
+        <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">
+          Higher = stricter filtering (blocks more contacts). Lower = permissive.
+        </p>
+        <div class="sensitivity-row">
+          <span style="font-size:11px;color:var(--text-muted);">Low</span>
+          <input
+            type="range"
+            id="palm-sensitivity"
+            min="1"
+            max="10"
+            value="5"
+            step="1"
+            aria-label="Palm rejection sensitivity"
+            aria-valuemin="1"
+            aria-valuemax="10"
+            aria-valuenow="5"
+          />
+          <span style="font-size:11px;color:var(--text-muted);">High</span>
+          <span class="sensitivity-value" id="palm-sensitivity-value">5</span>
+        </div>
+        <div class="sensitivity-labels">
+          <span>Allows big fingers</span>
+          <span>Stylus only</span>
+        </div>
+      </div>
+
+      <div class="modal-section" style="margin-bottom:0;">
+        <div class="modal-section-label">Current threshold</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+          <div style="width:10px;height:10px;border-radius:50%;background:var(--accent-primary);"></div>
+          <span style="font-size:12px;color:var(--text-secondary);">
+            Blocking contacts wider than
+            <strong style="color:#a5b4fc;" id="palm-threshold-display">12px</strong>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- END PALM MODAL -->
+
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       HISTORY BADGE (bottom center)
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="history-badge" class="history-badge" aria-live="polite" aria-label="Undo/Redo count">
+    ↩ 0  ↪ 0
+  </div>
+
+
+</div><!-- END #app -->
+
+
+<!-- ─────────────────────────────────────────────────────────────────────────
+     App Script (ES Module)
+     ───────────────────────────────────────────────────────────────────────── -->
+<script type="module" src="js/main.js"></script>
+
+</body>
+</html>

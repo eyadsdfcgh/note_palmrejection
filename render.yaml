@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: notepalm
+    runtime: static
+    staticPublishPath: .
+    buildCommand: ""
+    headers:
+      - path: /js/*.js
+        name: Content-Type
+        value: application/javascript; charset=utf-8
+      - path: /css/*.css
+        name: Content-Type
+        value: text/css; charset=utf-8
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
